@@ -10,29 +10,38 @@ import org.springframework.web.bind.annotation.RestController;
 import dislinkt.authservice.entities.Notification;
 import dislinkt.authservice.entities.NotificationType;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @RestController
-@RequestMapping("/auth-kafka")
-public class KafkaController {
+@RequestMapping("/test")
+public class TestController {
 
-	private static final Logger logger = LoggerFactory.getLogger(KafkaController.class);
+	private static final Logger logger = LoggerFactory.getLogger(TestController.class);
 
 	@Value("${server.port}")
 	private String port;
 
 	private KafkaTemplate<String, Notification> kafkaTemplate;
 
-	public KafkaController(KafkaTemplate<String, Notification> kafkaTemplate) {
+	public TestController(KafkaTemplate<String, Notification> kafkaTemplate) {
 		this.kafkaTemplate = kafkaTemplate;
 	}
 
-	@GetMapping("/test")
+	@GetMapping("/kafka")
 	public ResponseEntity<String> sendNotification() {
 		logger.info("Sending message...");
 		Notification notification = new Notification(1L, 2L, 3L, "Notification Test", NotificationType.POST);
 		kafkaTemplate.send("dislinkt-notifications", notification);
 		return ResponseEntity.ok("FROM AUTH SERVICE, Port# is: " + port);
+	}
+
+	@PreAuthorize("hasRole('ROLE_AGENT')")
+	@GetMapping("/agents-endpoint")
+	public ResponseEntity<String> agent() {
+		logger.info("Agent's endpoint...");
+		return ResponseEntity.ok("AGENT'S ENDPOINT");
 	}
 }

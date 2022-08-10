@@ -46,8 +46,8 @@ public class Administrator implements UserDetails {
 	private String company;
 
 	@ManyToMany(fetch = FetchType.EAGER)
-	@JoinTable(name = "user_authority", 
-		joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"), 
+	@JoinTable(name = "administrator_authority", 
+		joinColumns = @JoinColumn(name = "administrator_id", referencedColumnName = "id"), 
 		inverseJoinColumns = @JoinColumn(name = "authority_id", referencedColumnName = "id")
 	)
 	private List<Authority> authorities;
