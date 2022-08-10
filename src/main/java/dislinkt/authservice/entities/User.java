@@ -55,10 +55,7 @@ public class User implements UserDetails {
 	private Gender gender;
 
 	@ManyToMany(fetch = FetchType.EAGER)
-	@JoinTable(name = "user_authority", 
-		joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"), 
-		inverseJoinColumns = @JoinColumn(name = "authority_id", referencedColumnName = "id")
-	)
+	@JoinTable(name = "user_authority", joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "authority_id", referencedColumnName = "id"))
 	private List<Authority> authorities;
 
 	@Override
@@ -94,6 +91,16 @@ public class User implements UserDetails {
 	@Override
 	public boolean isEnabled() {
 		return true;
+	}
+
+	public User(String email, String username, String firstName, String lastName, String birthDate, Gender gender) {
+		super();
+		this.email = email;
+		this.username = username;
+		this.firstName = firstName;
+		this.lastName = lastName;
+		this.birthDate = birthDate;
+		this.gender = gender;
 	}
 
 }
