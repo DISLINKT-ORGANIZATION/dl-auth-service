@@ -12,9 +12,14 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @ControllerAdvice
 public class CustomGlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-	@ExceptionHandler(UsernameOrEmailAlreadyExists.class)
-	public void handleUsernameOrEmailAlreadyExists(HttpServletResponse response) throws IOException {
-		response.sendError(HttpStatus.BAD_REQUEST.value(), "Username or email already exists.");
+	@ExceptionHandler(UsernameAlreadyExists.class)
+	public void handleUsernameAlreadyExists(HttpServletResponse response) throws IOException {
+		response.sendError(HttpStatus.BAD_REQUEST.value(), "Username already exists.");
+	}
+	
+	@ExceptionHandler(EmailAlreadyExists.class)
+	public void handleEmailAlreadyExists(HttpServletResponse response) throws IOException {
+		response.sendError(HttpStatus.BAD_REQUEST.value(), "Email already exists.");
 	}
 
 }

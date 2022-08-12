@@ -1,21 +1,24 @@
 package dislinkt.authservice.services;
 
 import dislinkt.authservice.dtos.AgentCreateRequest;
-import dislinkt.authservice.dtos.AgentDto;
+import dislinkt.authservice.dtos.PersonDto;
 import dislinkt.authservice.dtos.JwtToken;
-import dislinkt.authservice.dtos.UserDto;
 import dislinkt.authservice.dtos.UserRegistrationRequest;
 
 public interface AuthenticationService {
 
 	JwtToken loginUser(String username, String password);
 
-	UserDto registerUser(UserRegistrationRequest request);
+	PersonDto registerUser(UserRegistrationRequest request);
 
-	AgentDto createAgent(AgentCreateRequest request);
+	PersonDto createAgent(AgentCreateRequest request);
+	
+	PersonDto updatePerson(PersonDto updateDto);
 
-	UserDto getUserById(Long id);
+	PersonDto getPersonById(Long id);
 
-	UserDto getUserByUsername(String username);
+	PersonDto getPersonByUsername(String username);
+	
+	boolean checkIfUsernameExists(String username);
 
 }

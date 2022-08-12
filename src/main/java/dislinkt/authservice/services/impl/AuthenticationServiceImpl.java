@@ -4,27 +4,32 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import dislinkt.authservice.dtos.AgentCreateRequest;
-import dislinkt.authservice.dtos.AgentDto;
 import dislinkt.authservice.dtos.JwtToken;
-import dislinkt.authservice.dtos.UserDto;
+import dislinkt.authservice.dtos.PersonDto;
 import dislinkt.authservice.dtos.UserRegistrationRequest;
+import dislinkt.authservice.entities.Administrator;
 import dislinkt.authservice.entities.Agent;
+import dislinkt.authservice.entities.Gender;
+import dislinkt.authservice.entities.Person;
 import dislinkt.authservice.entities.User;
-import dislinkt.authservice.exceptions.UsernameOrEmailAlreadyExists;
+import dislinkt.authservice.exceptions.EmailAlreadyExists;
+import dislinkt.authservice.exceptions.UsernameAlreadyExists;
+import dislinkt.authservice.mappers.AdministratorDtoMapper;
 import dislinkt.authservice.mappers.AgentDtoMapper;
 import dislinkt.authservice.mappers.UserDtoMapper;
 import dislinkt.authservice.repositories.AdministratorRepository;
 import dislinkt.authservice.repositories.AgentRepository;
 import dislinkt.authservice.repositories.AuthorityRepository;
+import dislinkt.authservice.repositories.PersonRepository;
 import dislinkt.authservice.repositories.UserRepository;
 import dislinkt.authservice.services.AuthenticationService;
 
 import java.util.ArrayList;
+import java.util.Optional;
 
 @Service
 public class AuthenticationServiceImpl implements AuthenticationService {
@@ -42,6 +47,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	private AdministratorRepository administratorRepository;
 
 	@Autowired
+	private PersonRepository personRepository;
+
+	@Autowired
 	private AuthorityRepository authorityRepository;
 
 	@Autowired
@@ -49,6 +57,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 	@Autowired
 	private AgentDtoMapper agentMapper;
+
+	@Autowired
+	private AdministratorDtoMapper administratorMapper;
 
 	@Autowired
 	private AuthenticationManager authenticationManager;
@@ -63,9 +74,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 		return new JwtToken(tokenProvider.generateToken(authentication));
 	}
 
-	public UserDto registerUser(UserRegistrationRequest request) {
+	public PersonDto registerUser(UserRegistrationRequest request) {
 
-		checkEmailAndUsername(request.getEmail(), request.getUsername());
+		checkUsername(request.getUsername());
+		checkEmail(request.getEmail());
 
 		User user = userMapper.toEntity(request);
 		user.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -78,9 +90,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 		return userMapper.toDto(userRepository.save(user));
 	}
 
-	public AgentDto createAgent(AgentCreateRequest request) {
+	public PersonDto createAgent(AgentCreateRequest request) {
 
-		checkEmailAndUsername(request.getEmail(), request.getUsername());
+		checkUsername(request.getUsername());
+		checkEmail(request.getEmail());
 
 		Agent agent = agentMapper.toEntity(request);
 		agent.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -93,36 +106,114 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 		return agentMapper.toDto(agentRepository.save(agent));
 	}
 
-	public UserDto getUserById(Long id) {
-		User user = userRepository.findById(id).orElseGet(null);
-		if (user != null) {
-			return userMapper.toDto(user);
-		} else {
-			return null;
+	public PersonDto updatePerson(PersonDto updateDto) {
+
+		Optional<Administrator> adminOptional = administratorRepository.findById(updateDto.getId());
+		if (adminOptional.isPresent()) {
+			Administrator admin = adminOptional.get();
+			if (!admin.getUsername().equals(updateDto.getUsername())) {
+				checkUsername(updateDto.getUsername());
+			}
+			if (!admin.getEmail().equals(updateDto.getEmail())) {
+				checkEmail(updateDto.getEmail());
+			}
+			admin.setUsername(updateDto.getUsername());
+			admin.setEmail(updateDto.getEmail());
+			return administratorMapper.toDto(administratorRepository.save(admin));
 		}
+		Optional<Agent> agentOptional = agentRepository.findById(updateDto.getId());
+		if (agentOptional.isPresent()) {
+			Agent agent = agentOptional.get();
+			if (!agent.getUsername().equals(updateDto.getUsername())) {
+				checkUsername(updateDto.getUsername());
+			}
+			if (!agent.getEmail().equals(updateDto.getEmail())) {
+				checkEmail(updateDto.getEmail());
+			}
+			agent.setUsername(updateDto.getUsername());
+			agent.setEmail(updateDto.getEmail());
+			agent.setCompany(updateDto.getCompany());
+			return agentMapper.toDto(agentRepository.save(agent));
+		}
+		Optional<User> userOptional = userRepository.findById(updateDto.getId());
+		if (userOptional.isPresent()) {
+			User user = userOptional.get();
+			if (!user.getUsername().equals(updateDto.getUsername())) {
+				checkUsername(updateDto.getUsername());
+			}
+			if (!user.getEmail().equals(updateDto.getEmail())) {
+				checkEmail(updateDto.getEmail());
+			}
+			user.setUsername(updateDto.getUsername());
+			user.setEmail(updateDto.getEmail());
+			user.setFirstName(updateDto.getFirstName());
+			user.setLastName(updateDto.getLastName());
+			user.setBirthDate(updateDto.getBirthDate());
+			user.setGender(Gender.valueOfInt(updateDto.getGender()));
+			return userMapper.toDto(userRepository.save(user));
+		}
+		return null;
 	}
 
-	public UserDto getUserByUsername(String username) {
+	public PersonDto getPersonById(Long id) {
+		Optional<Administrator> admin = administratorRepository.findById(id);
+		if (admin.isPresent()) {
+			return administratorMapper.toDto(admin.get());
+		}
+		Optional<Agent> agent = agentRepository.findById(id);
+		if (agent.isPresent()) {
+			return agentMapper.toDto(agent.get());
+		}
+		Optional<User> user = userRepository.findById(id);
+		if (user.isPresent()) {
+			return userMapper.toDto(user.get());
+		}
+		return null;
+	}
+
+	public PersonDto getPersonByUsername(String username) {
+		Administrator admin = administratorRepository.findByUsername(username);
+		if (admin != null) {
+			return administratorMapper.toDto(admin);
+		}
+		Agent agent = agentRepository.findByUsername(username);
+		if (agent != null) {
+			return agentMapper.toDto(agent);
+		}
 		User user = userRepository.findByUsername(username);
 		if (user != null) {
 			return userMapper.toDto(user);
-		} else {
-			return null;
+		}
+		return null;
+	}
+
+	public void checkUsername(String username) {
+		boolean usernameExists = checkIfUsernameExists(username);
+		if (usernameExists) {
+			throw new UsernameAlreadyExists("Username already exists.");
 		}
 	}
 
-	private void checkEmailAndUsername(String email, String username) {
-		UserDetails person = administratorRepository.findByEmailOrUsername(email, username);
-		if (person != null) {
-			throw new UsernameOrEmailAlreadyExists("Username or email already exists.");
+	public void checkEmail(String email) {
+		boolean emailExists = checkIfEmailExists(email);
+		if (emailExists) {
+			throw new EmailAlreadyExists("Email already exists.");
 		}
-		person = agentRepository.findByEmailOrUsername(email, username);
+	}
+
+	public boolean checkIfUsernameExists(String username) {
+		Person person = personRepository.findByUsername(username);
 		if (person != null) {
-			throw new UsernameOrEmailAlreadyExists("Username or email already exists.");
+			return true;
 		}
-		person = userRepository.findByEmailOrUsername(email, username);
+		return false;
+	}
+
+	private boolean checkIfEmailExists(String email) {
+		Person person = personRepository.findByEmail(email);
 		if (person != null) {
-			throw new UsernameOrEmailAlreadyExists("Username or email already exists.");
+			return true;
 		}
+		return false;
 	}
 }
