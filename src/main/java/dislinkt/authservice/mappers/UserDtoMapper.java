@@ -2,7 +2,7 @@ package dislinkt.authservice.mappers;
 
 import org.springframework.stereotype.Service;
 
-import dislinkt.authservice.dtos.UserDto;
+import dislinkt.authservice.dtos.PersonDto;
 import dislinkt.authservice.dtos.UserRegistrationRequest;
 import dislinkt.authservice.entities.Gender;
 import dislinkt.authservice.entities.User;
@@ -10,14 +10,14 @@ import dislinkt.authservice.entities.User;
 @Service
 public class UserDtoMapper {
 
-	public UserDto toDto(User user) {
-		return new UserDto(user.getId(), user.getUsername(), user.getEmail(), user.getFirstName(), user.getLastName(),
-				user.getBirthDate(), user.getGender().name());
+	public PersonDto toDto(User user) {
+		return new PersonDto(user.getId(), user.getUsername(), user.getEmail(), user.getFirstName(), user.getLastName(),
+				user.getBirthDate(), user.getGender().ordinal(), user.getAuthorities().get(0).getAuthority());
 	}
 
 	public User toEntity(UserRegistrationRequest request) {
 		return new User(request.getEmail(), request.getUsername(), request.getFirstName(), request.getLastName(),
-				request.getBirthDate(), Gender.valueOf(request.getGender()));
+				request.getBirthDate(), Gender.valueOfInt(request.getGender()));
 	}
 
 }
