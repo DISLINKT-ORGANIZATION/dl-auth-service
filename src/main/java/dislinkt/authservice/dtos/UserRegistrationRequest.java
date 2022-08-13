@@ -14,6 +14,6 @@ public class UserRegistrationRequest {
 	private String email;
 	private String firstName;
 	private String lastName;
-	private String birthDate;
+	private Long birthDate;
 	private int gender;
 }
