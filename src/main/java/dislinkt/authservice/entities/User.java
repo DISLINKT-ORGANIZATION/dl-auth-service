@@ -24,7 +24,7 @@ public class User extends Person {
 	private String lastName;
 
 	@Column(name = "birth_date")
-	private String birthDate;
+	private Long birthDate;
 
 	@Column(name = "gender")
 	private Gender gender;
@@ -49,7 +49,7 @@ public class User extends Person {
 		return true;
 	}
 
-	public User(String email, String username, String firstName, String lastName, String birthDate, Gender gender) {
+	public User(String email, String username, String firstName, String lastName, Long birthDate, Gender gender) {
 		super(email, username);
 		this.firstName = firstName;
 		this.lastName = lastName;

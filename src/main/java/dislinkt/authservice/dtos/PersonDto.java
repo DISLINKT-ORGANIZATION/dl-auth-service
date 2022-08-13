@@ -14,7 +14,7 @@ public class PersonDto {
 	private String email;
 	private String firstName;
 	private String lastName;
-	private String birthDate;
+	private Long birthDate;
 	private int gender;
 	private String company;
 	private String role;
@@ -28,7 +28,7 @@ public class PersonDto {
 	}
 
 	public PersonDto(Long id, String username, String email, String firstName, String lastName,
-			String birthDate, int gender, String role) {
+			Long birthDate, int gender, String role) {
 		super();
 		this.id = id;
 		this.username = username;
