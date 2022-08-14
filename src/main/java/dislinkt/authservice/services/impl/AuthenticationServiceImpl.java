@@ -1,6 +1,7 @@
 package dislinkt.authservice.services.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -9,11 +10,14 @@ import org.springframework.stereotype.Service;
 
 import dislinkt.authservice.dtos.AgentCreateRequest;
 import dislinkt.authservice.dtos.JwtToken;
+import dislinkt.authservice.dtos.KafkaNotification;
+import dislinkt.authservice.dtos.KafkaNotificationType;
 import dislinkt.authservice.dtos.PersonDto;
 import dislinkt.authservice.dtos.UserRegistrationRequest;
 import dislinkt.authservice.entities.Administrator;
 import dislinkt.authservice.entities.Agent;
 import dislinkt.authservice.entities.Gender;
+import dislinkt.authservice.entities.Notification;
 import dislinkt.authservice.entities.Person;
 import dislinkt.authservice.entities.User;
 import dislinkt.authservice.exceptions.EmailAlreadyExists;
@@ -66,6 +70,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 	@Autowired
 	private JwtTokenProvider tokenProvider;
+	
+	@Autowired
+	private KafkaTemplate<String, KafkaNotification> kafkaTemplate;
 
 	public JwtToken loginUser(String username, String password) {
 		Authentication authentication = authenticationManager
@@ -86,8 +93,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 				add(authorityRepository.findByName("ROLE_USER"));
 			}
 		});
+		
+		User newUser = userRepository.save(user);
 
-		return userMapper.toDto(userRepository.save(user));
+		KafkaNotification kafkaNotification = new KafkaNotification((long)newUser.getId(), KafkaNotificationType.REGISTERED_USER);
+		kafkaTemplate.send("dislinkt-notifications", kafkaNotification);
+		
+		return userMapper.toDto(newUser);
 	}
 
 	public PersonDto createAgent(AgentCreateRequest request) {

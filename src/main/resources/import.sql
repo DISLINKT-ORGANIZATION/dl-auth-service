@@ -1,6 +1,6 @@
-INSERT INTO authorities (name) VALUES ('ROLE_ADMINISTRATOR');
-INSERT INTO authorities (name) VALUES ('ROLE_AGENT');
-INSERT INTO authorities (name) VALUES ('ROLE_USER');
+insert into authorities (name) values ('ROLE_ADMINISTRATOR');
+insert into authorities (name) values ('ROLE_AGENT');
+insert into authorities (name) values ('ROLE_USER');
 
 insert into administrators (id, email, username, password) values (nextval('person_seq'), 'admin@gmail.com', 'admin', '$2y$12$NFN7DJUX1lFfaDX1tc9/6uBtgls9SZOU9iwjhrlXJc0xr471vgKAK');
 insert into agents (id, email, username, password) values (nextval('person_seq'), 'agent@gmail.com', 'agent', '$2y$12$NFN7DJUX1lFfaDX1tc9/6uBtgls9SZOU9iwjhrlXJc0xr471vgKAK');
