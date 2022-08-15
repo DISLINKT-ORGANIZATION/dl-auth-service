@@ -21,5 +21,10 @@ public class CustomGlobalExceptionHandler extends ResponseEntityExceptionHandler
 	public void handleEmailAlreadyExists(HttpServletResponse response) throws IOException {
 		response.sendError(HttpStatus.BAD_REQUEST.value(), "Email already exists.");
 	}
+	
+	@ExceptionHandler(InvalidUsername.class)
+	public void handleInvalidUsername(HttpServletResponse response) throws IOException {
+		response.sendError(HttpStatus.UNAUTHORIZED.value(), "Invalid username.");
+	}
 
 }
