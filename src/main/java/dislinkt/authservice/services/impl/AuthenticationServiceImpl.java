@@ -17,10 +17,10 @@ import dislinkt.authservice.dtos.UserRegistrationRequest;
 import dislinkt.authservice.entities.Administrator;
 import dislinkt.authservice.entities.Agent;
 import dislinkt.authservice.entities.Gender;
-import dislinkt.authservice.entities.Notification;
 import dislinkt.authservice.entities.Person;
 import dislinkt.authservice.entities.User;
 import dislinkt.authservice.exceptions.EmailAlreadyExists;
+import dislinkt.authservice.exceptions.InvalidUsername;
 import dislinkt.authservice.exceptions.UsernameAlreadyExists;
 import dislinkt.authservice.mappers.AdministratorDtoMapper;
 import dislinkt.authservice.mappers.AgentDtoMapper;
@@ -77,8 +77,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	public JwtToken loginUser(String username, String password) {
 		Authentication authentication = authenticationManager
 				.authenticate(new UsernamePasswordAuthenticationToken(username, password));
+		
+		PersonDto person = getPersonByUsername(username);
+		if (person == null) {
+			throw new InvalidUsername("Invalid username");
+		}
 
-		return new JwtToken(tokenProvider.generateToken(authentication));
+		return new JwtToken(tokenProvider.generateToken(authentication, person.getId()));
 	}
 
 	public PersonDto registerUser(UserRegistrationRequest request) {

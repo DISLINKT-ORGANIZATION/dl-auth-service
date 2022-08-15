@@ -21,10 +21,11 @@ public class JwtTokenProvider {
 		this.jwtConfig = jwtConfig;
 	}
 
-	public String generateToken(Authentication authentication) {
+	public String generateToken(Authentication authentication, Long id) {
 
 		Long now = System.currentTimeMillis();
 		return Jwts.builder().setSubject(authentication.getName())
+				.claim("id", id)
 				.claim("authorities",
 						authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority)
 								.collect(Collectors.toList()))
