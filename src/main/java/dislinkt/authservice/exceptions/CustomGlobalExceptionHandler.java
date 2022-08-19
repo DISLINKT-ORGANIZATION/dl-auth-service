@@ -5,6 +5,7 @@ import java.io.IOException;
 import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
@@ -13,18 +14,18 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 public class CustomGlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
 	@ExceptionHandler(UsernameAlreadyExists.class)
-	public void handleUsernameAlreadyExists(HttpServletResponse response) throws IOException {
-		response.sendError(HttpStatus.BAD_REQUEST.value(), "Username already exists.");
+	public ResponseEntity<Object> handleUsernameAlreadyExists(HttpServletResponse response) throws IOException {
+		return new ResponseEntity<>("Username already exists.", HttpStatus.BAD_REQUEST);
 	}
 	
 	@ExceptionHandler(EmailAlreadyExists.class)
-	public void handleEmailAlreadyExists(HttpServletResponse response) throws IOException {
-		response.sendError(HttpStatus.BAD_REQUEST.value(), "Email already exists.");
+	public ResponseEntity<Object> handleEmailAlreadyExists(HttpServletResponse response) throws IOException {
+		return new ResponseEntity<>("Email already exists.", HttpStatus.BAD_REQUEST);
 	}
 	
 	@ExceptionHandler(InvalidUsername.class)
-	public void handleInvalidUsername(HttpServletResponse response) throws IOException {
-		response.sendError(HttpStatus.UNAUTHORIZED.value(), "Invalid username.");
+	public ResponseEntity<Object> handleInvalidUsername(HttpServletResponse response) throws IOException {
+		return new ResponseEntity<>("Invalid username.", HttpStatus.BAD_REQUEST);
 	}
 
 }

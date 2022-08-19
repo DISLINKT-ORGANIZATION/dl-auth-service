@@ -1,22 +1,12 @@
 package dislinkt.authservice.controllers;
 
+import dislinkt.authservice.dtos.*;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import dislinkt.authservice.dtos.AgentCreateRequest;
-import dislinkt.authservice.dtos.JwtToken;
-import dislinkt.authservice.dtos.LoginRequest;
-import dislinkt.authservice.dtos.PersonDto;
-import dislinkt.authservice.dtos.UserRegistrationRequest;
 import dislinkt.authservice.services.AuthenticationService;
 
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @RestController
@@ -28,8 +18,8 @@ public class AuthenticationController {
 
 	@PostMapping("/login")
 	public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
-		JwtToken token = authenticationService.loginUser(loginRequest.getUsername(), loginRequest.getPassword());
-		return ResponseEntity.ok(token);
+		UserJwtToken userToken = authenticationService.loginUser(loginRequest.getUsername(), loginRequest.getPassword());
+		return ResponseEntity.ok(userToken);
 	}
 
 	@PostMapping("/register-user")
