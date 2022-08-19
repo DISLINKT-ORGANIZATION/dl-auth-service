@@ -1,19 +1,16 @@
 package dislinkt.authservice.services.impl;
 
+import dislinkt.authservice.dtos.*;
+import dislinkt.authservice.security.TokenUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import dislinkt.authservice.dtos.AgentCreateRequest;
-import dislinkt.authservice.dtos.JwtToken;
-import dislinkt.authservice.dtos.KafkaNotification;
-import dislinkt.authservice.dtos.KafkaNotificationType;
-import dislinkt.authservice.dtos.PersonDto;
-import dislinkt.authservice.dtos.UserRegistrationRequest;
 import dislinkt.authservice.entities.Administrator;
 import dislinkt.authservice.entities.Agent;
 import dislinkt.authservice.entities.Gender;
@@ -38,199 +35,203 @@ import java.util.Optional;
 @Service
 public class AuthenticationServiceImpl implements AuthenticationService {
 
-	@Autowired
-	private PasswordEncoder passwordEncoder;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
-	@Autowired
-	private UserRepository userRepository;
+    @Autowired
+    private UserRepository userRepository;
 
-	@Autowired
-	private AgentRepository agentRepository;
+    @Autowired
+    private AgentRepository agentRepository;
 
-	@Autowired
-	private AdministratorRepository administratorRepository;
+    @Autowired
+    private AdministratorRepository administratorRepository;
 
-	@Autowired
-	private PersonRepository personRepository;
+    @Autowired
+    private PersonRepository personRepository;
 
-	@Autowired
-	private AuthorityRepository authorityRepository;
+    @Autowired
+    private AuthorityRepository authorityRepository;
 
-	@Autowired
-	private UserDtoMapper userMapper;
+    @Autowired
+    private UserDtoMapper userMapper;
 
-	@Autowired
-	private AgentDtoMapper agentMapper;
+    @Autowired
+    private AgentDtoMapper agentMapper;
 
-	@Autowired
-	private AdministratorDtoMapper administratorMapper;
+    @Autowired
+    private AdministratorDtoMapper administratorMapper;
 
-	@Autowired
-	private AuthenticationManager authenticationManager;
+    @Autowired
+    private AuthenticationManager authenticationManager;
 
-	@Autowired
-	private JwtTokenProvider tokenProvider;
-	
-	@Autowired
-	private KafkaTemplate<String, KafkaNotification> kafkaTemplate;
+    @Autowired
+    private TokenUtils tokenUtils;
 
-	public JwtToken loginUser(String username, String password) {
-		Authentication authentication = authenticationManager
-				.authenticate(new UsernamePasswordAuthenticationToken(username, password));
-		
-		PersonDto person = getPersonByUsername(username);
-		if (person == null) {
-			throw new InvalidUsername("Invalid username");
-		}
+    @Autowired
+    private KafkaTemplate<String, KafkaNotification> kafkaTemplate;
 
-		return new JwtToken(tokenProvider.generateToken(authentication, person.getId()));
-	}
+    public UserJwtToken loginUser(String username, String password) {
+        PersonDto person = getPersonByUsername(username);
+        if (person == null) {
+            throw new InvalidUsername("Invalid credentials");
+        }
+        return generateTokenResponse(username, password);
+    }
 
-	public PersonDto registerUser(UserRegistrationRequest request) {
+    public PersonDto registerUser(UserRegistrationRequest request) {
 
-		checkUsername(request.getUsername());
-		checkEmail(request.getEmail());
+        checkUsername(request.getUsername());
+        checkEmail(request.getEmail());
 
-		User user = userMapper.toEntity(request);
-		user.setPassword(passwordEncoder.encode(request.getPassword()));
-		user.setAuthorities(new ArrayList<>() {
-			{
-				add(authorityRepository.findByName("ROLE_USER"));
-			}
-		});
-		
-		User newUser = userRepository.save(user);
+        User user = userMapper.toEntity(request);
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setAuthorities(new ArrayList<>() {
+            {
+                add(authorityRepository.findByName("ROLE_USER"));
+            }
+        });
 
-		KafkaNotification kafkaNotification = new KafkaNotification((long)newUser.getId(), KafkaNotificationType.REGISTERED_USER);
-		kafkaTemplate.send("dislinkt-notifications", kafkaNotification);
-		
-		return userMapper.toDto(newUser);
-	}
+        User newUser = userRepository.save(user);
 
-	public PersonDto createAgent(AgentCreateRequest request) {
+        KafkaNotification kafkaNotification = new KafkaNotification(newUser.getId(), KafkaNotificationType.REGISTERED_USER);
+        kafkaTemplate.send("dislinkt-notifications", kafkaNotification);
 
-		checkUsername(request.getUsername());
-		checkEmail(request.getEmail());
+        return userMapper.toDto(newUser);
+    }
 
-		Agent agent = agentMapper.toEntity(request);
-		agent.setPassword(passwordEncoder.encode(request.getPassword()));
-		agent.setAuthorities(new ArrayList<>() {
-			{
-				add(authorityRepository.findByName("ROLE_AGENT"));
-			}
-		});
+    public PersonDto createAgent(AgentCreateRequest request) {
 
-		return agentMapper.toDto(agentRepository.save(agent));
-	}
+        checkUsername(request.getUsername());
+        checkEmail(request.getEmail());
 
-	public PersonDto updatePerson(PersonDto updateDto) {
+        Agent agent = agentMapper.toEntity(request);
+        agent.setPassword(passwordEncoder.encode(request.getPassword()));
+        agent.setAuthorities(new ArrayList<>() {
+            {
+                add(authorityRepository.findByName("ROLE_AGENT"));
+            }
+        });
 
-		Optional<Administrator> adminOptional = administratorRepository.findById(updateDto.getId());
-		if (adminOptional.isPresent()) {
-			Administrator admin = adminOptional.get();
-			if (!admin.getUsername().equals(updateDto.getUsername())) {
-				checkUsername(updateDto.getUsername());
-			}
-			if (!admin.getEmail().equals(updateDto.getEmail())) {
-				checkEmail(updateDto.getEmail());
-			}
-			admin.setUsername(updateDto.getUsername());
-			admin.setEmail(updateDto.getEmail());
-			return administratorMapper.toDto(administratorRepository.save(admin));
-		}
-		Optional<Agent> agentOptional = agentRepository.findById(updateDto.getId());
-		if (agentOptional.isPresent()) {
-			Agent agent = agentOptional.get();
-			if (!agent.getUsername().equals(updateDto.getUsername())) {
-				checkUsername(updateDto.getUsername());
-			}
-			if (!agent.getEmail().equals(updateDto.getEmail())) {
-				checkEmail(updateDto.getEmail());
-			}
-			agent.setUsername(updateDto.getUsername());
-			agent.setEmail(updateDto.getEmail());
-			agent.setCompany(updateDto.getCompany());
-			return agentMapper.toDto(agentRepository.save(agent));
-		}
-		Optional<User> userOptional = userRepository.findById(updateDto.getId());
-		if (userOptional.isPresent()) {
-			User user = userOptional.get();
-			if (!user.getUsername().equals(updateDto.getUsername())) {
-				checkUsername(updateDto.getUsername());
-			}
-			if (!user.getEmail().equals(updateDto.getEmail())) {
-				checkEmail(updateDto.getEmail());
-			}
-			user.setUsername(updateDto.getUsername());
-			user.setEmail(updateDto.getEmail());
-			user.setFirstName(updateDto.getFirstName());
-			user.setLastName(updateDto.getLastName());
-			user.setBirthDate(updateDto.getBirthDate());
-			user.setGender(Gender.valueOfInt(updateDto.getGender()));
-			return userMapper.toDto(userRepository.save(user));
-		}
-		return null;
-	}
+        return agentMapper.toDto(agentRepository.save(agent));
+    }
 
-	public PersonDto getPersonById(Long id) {
-		Optional<Administrator> admin = administratorRepository.findById(id);
-		if (admin.isPresent()) {
-			return administratorMapper.toDto(admin.get());
-		}
-		Optional<Agent> agent = agentRepository.findById(id);
-		if (agent.isPresent()) {
-			return agentMapper.toDto(agent.get());
-		}
-		Optional<User> user = userRepository.findById(id);
-		if (user.isPresent()) {
-			return userMapper.toDto(user.get());
-		}
-		return null;
-	}
+    public PersonDto updatePerson(PersonDto updateDto) {
 
-	public PersonDto getPersonByUsername(String username) {
-		Administrator admin = administratorRepository.findByUsername(username);
-		if (admin != null) {
-			return administratorMapper.toDto(admin);
-		}
-		Agent agent = agentRepository.findByUsername(username);
-		if (agent != null) {
-			return agentMapper.toDto(agent);
-		}
-		User user = userRepository.findByUsername(username);
-		if (user != null) {
-			return userMapper.toDto(user);
-		}
-		return null;
-	}
+        Optional<Administrator> adminOptional = administratorRepository.findById(updateDto.getId());
+        if (adminOptional.isPresent()) {
+            Administrator admin = adminOptional.get();
+            if (!admin.getUsername().equals(updateDto.getUsername())) {
+                checkUsername(updateDto.getUsername());
+            }
+            if (!admin.getEmail().equals(updateDto.getEmail())) {
+                checkEmail(updateDto.getEmail());
+            }
+            admin.setUsername(updateDto.getUsername());
+            admin.setEmail(updateDto.getEmail());
+            return administratorMapper.toDto(administratorRepository.save(admin));
+        }
+        Optional<Agent> agentOptional = agentRepository.findById(updateDto.getId());
+        if (agentOptional.isPresent()) {
+            Agent agent = agentOptional.get();
+            if (!agent.getUsername().equals(updateDto.getUsername())) {
+                checkUsername(updateDto.getUsername());
+            }
+            if (!agent.getEmail().equals(updateDto.getEmail())) {
+                checkEmail(updateDto.getEmail());
+            }
+            agent.setUsername(updateDto.getUsername());
+            agent.setEmail(updateDto.getEmail());
+            agent.setCompany(updateDto.getCompany());
+            return agentMapper.toDto(agentRepository.save(agent));
+        }
+        Optional<User> userOptional = userRepository.findById(updateDto.getId());
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            if (!user.getUsername().equals(updateDto.getUsername())) {
+                checkUsername(updateDto.getUsername());
+            }
+            if (!user.getEmail().equals(updateDto.getEmail())) {
+                checkEmail(updateDto.getEmail());
+            }
+            user.setUsername(updateDto.getUsername());
+            user.setEmail(updateDto.getEmail());
+            user.setFirstName(updateDto.getFirstName());
+            user.setLastName(updateDto.getLastName());
+            user.setBirthDate(updateDto.getBirthDate());
+            user.setGender(Gender.valueOfInt(updateDto.getGender()));
+            return userMapper.toDto(userRepository.save(user));
+        }
+        return null;
+    }
 
-	public void checkUsername(String username) {
-		boolean usernameExists = checkIfUsernameExists(username);
-		if (usernameExists) {
-			throw new UsernameAlreadyExists("Username already exists.");
-		}
-	}
+    public PersonDto getPersonById(Long id) {
+        Optional<Administrator> admin = administratorRepository.findById(id);
+        if (admin.isPresent()) {
+            return administratorMapper.toDto(admin.get());
+        }
+        Optional<Agent> agent = agentRepository.findById(id);
+        if (agent.isPresent()) {
+            return agentMapper.toDto(agent.get());
+        }
+        Optional<User> user = userRepository.findById(id);
+        if (user.isPresent()) {
+            return userMapper.toDto(user.get());
+        }
+        return null;
+    }
 
-	public void checkEmail(String email) {
-		boolean emailExists = checkIfEmailExists(email);
-		if (emailExists) {
-			throw new EmailAlreadyExists("Email already exists.");
-		}
-	}
+    public PersonDto getPersonByUsername(String username) {
+        Administrator admin = administratorRepository.findByUsername(username);
+        if (admin != null) {
+            return administratorMapper.toDto(admin);
+        }
+        Agent agent = agentRepository.findByUsername(username);
+        if (agent != null) {
+            return agentMapper.toDto(agent);
+        }
+        User user = userRepository.findByUsername(username);
+        if (user != null) {
+            return userMapper.toDto(user);
+        }
+        return null;
+    }
 
-	public boolean checkIfUsernameExists(String username) {
-		Person person = personRepository.findByUsername(username);
-		if (person != null) {
-			return true;
-		}
-		return false;
-	}
+    public void checkUsername(String username) {
+        boolean usernameExists = checkIfUsernameExists(username);
+        if (usernameExists) {
+            throw new UsernameAlreadyExists("Username already exists.");
+        }
+    }
 
-	private boolean checkIfEmailExists(String email) {
-		Person person = personRepository.findByEmail(email);
-		if (person != null) {
-			return true;
-		}
-		return false;
-	}
+    public void checkEmail(String email) {
+        boolean emailExists = checkIfEmailExists(email);
+        if (emailExists) {
+            throw new EmailAlreadyExists("Email already exists.");
+        }
+    }
+
+    public boolean checkIfUsernameExists(String username) {
+        Person person = personRepository.findByUsername(username);
+        return person != null;
+    }
+
+    private boolean checkIfEmailExists(String email) {
+        Person person = personRepository.findByEmail(email);
+        return person != null;
+    }
+
+    private UserJwtToken generateTokenResponse(String username, String password) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(username, password)
+        );
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        // create token
+        Person user = (Person) authentication.getPrincipal();
+        String jwt = tokenUtils.generateToken(user.getUsername());
+        PersonDto person = getPersonByUsername(user.getUsername());
+
+        return new UserJwtToken(jwt, person.getId(), person.getRole());
+    }
 }
