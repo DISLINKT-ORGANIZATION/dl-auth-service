@@ -12,7 +12,7 @@ public class UserDtoMapper {
 
 	public PersonDto toDto(User user) {
 		return new PersonDto(user.getId(), user.getUsername(), user.getEmail(), user.getFirstName(), user.getLastName(),
-				user.getBirthDate(), user.getGender().ordinal(), user.getAuthorities().get(0).getAuthority());
+				user.getBirthDate(), user.getGender().getValue(), user.getAuthorities().get(0).getAuthority());
 	}
 
 	public User toEntity(UserRegistrationRequest request) {
