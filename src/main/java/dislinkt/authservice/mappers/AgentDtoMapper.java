@@ -18,4 +18,8 @@ public class AgentDtoMapper {
 		return new Agent(request.getEmail(), request.getUsername(), request.getCompany());
 	}
 
+    public PersonDto toDtoWithToken(Agent agent, String token) {
+		return new PersonDto(agent.getId(), agent.getUsername(), agent.getEmail(), agent.getCompany(),
+				agent.getAuthorities().get(0).getAuthority(), token);
+    }
 }
