@@ -30,6 +30,7 @@ import dislinkt.authservice.repositories.UserRepository;
 import dislinkt.authservice.services.AuthenticationService;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Optional;
 
 @Service
@@ -117,52 +118,56 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     public PersonDto updatePerson(PersonDto updateDto) {
-
         Optional<Administrator> adminOptional = administratorRepository.findById(updateDto.getId());
         if (adminOptional.isPresent()) {
             Administrator admin = adminOptional.get();
-            if (!admin.getUsername().equals(updateDto.getUsername())) {
-                checkUsername(updateDto.getUsername());
-            }
-            if (!admin.getEmail().equals(updateDto.getEmail())) {
-                checkEmail(updateDto.getEmail());
-            }
-            admin.setUsername(updateDto.getUsername());
-            admin.setEmail(updateDto.getEmail());
-            return administratorMapper.toDto(administratorRepository.save(admin));
+            HashMap<String, Object> params = updatePerson(admin, updateDto);
+            Administrator updatedAdmin = (Administrator) params.get("updatedPerson");
+            String token = (String) params.get("token");
+            updatedAdmin = administratorRepository.save(updatedAdmin);
+            return administratorMapper.toDtoWithToken(updatedAdmin, token);
         }
         Optional<Agent> agentOptional = agentRepository.findById(updateDto.getId());
         if (agentOptional.isPresent()) {
             Agent agent = agentOptional.get();
-            if (!agent.getUsername().equals(updateDto.getUsername())) {
-                checkUsername(updateDto.getUsername());
-            }
-            if (!agent.getEmail().equals(updateDto.getEmail())) {
-                checkEmail(updateDto.getEmail());
-            }
-            agent.setUsername(updateDto.getUsername());
-            agent.setEmail(updateDto.getEmail());
-            agent.setCompany(updateDto.getCompany());
-            return agentMapper.toDto(agentRepository.save(agent));
+            HashMap<String, Object> params = updatePerson(agent, updateDto);
+            Agent updatedAgent = (Agent) params.get("updatedPerson");
+            updatedAgent.setCompany(updateDto.getCompany());
+            String token = (String) params.get("token");
+            updatedAgent = agentRepository.save(updatedAgent);
+            return agentMapper.toDtoWithToken(updatedAgent, token);
         }
         Optional<User> userOptional = userRepository.findById(updateDto.getId());
         if (userOptional.isPresent()) {
             User user = userOptional.get();
-            if (!user.getUsername().equals(updateDto.getUsername())) {
-                checkUsername(updateDto.getUsername());
-            }
-            if (!user.getEmail().equals(updateDto.getEmail())) {
-                checkEmail(updateDto.getEmail());
-            }
-            user.setUsername(updateDto.getUsername());
-            user.setEmail(updateDto.getEmail());
-            user.setFirstName(updateDto.getFirstName());
-            user.setLastName(updateDto.getLastName());
-            user.setBirthDate(updateDto.getBirthDate());
-            user.setGender(Gender.valueOfInt(updateDto.getGender()));
-            return userMapper.toDto(userRepository.save(user));
+            HashMap<String, Object> params = updatePerson(user, updateDto);
+            User updatedUser = (User) params.get("updatedPerson");
+            String token = (String) params.get("token");
+            updatedUser.setFirstName(updateDto.getFirstName());
+            updatedUser.setLastName(updateDto.getLastName());
+            updatedUser.setBirthDate(updateDto.getBirthDate());
+            updatedUser.setGender(Gender.valueOfInt(updateDto.getGender()));
+            updatedUser = userRepository.save(updatedUser);
+            return userMapper.toDtoWithToken(updatedUser, token);
         }
         return null;
+    }
+
+    private HashMap<String, Object> updatePerson(Person person, PersonDto updateDto) {
+        String token = "";
+        if (!person.getUsername().equalsIgnoreCase(updateDto.getUsername())) {
+            checkUsername(updateDto.getUsername());
+            token = tokenUtils.generateToken(updateDto.getUsername());
+        }
+        if (!person.getEmail().equalsIgnoreCase(updateDto.getEmail())) {
+            checkEmail(updateDto.getEmail());
+        }
+        person.setUsername(updateDto.getUsername());
+        person.setEmail(updateDto.getEmail());
+        HashMap<String, Object> response = new HashMap<>();
+        response.put("updatedPerson", person);
+        response.put("token", token);
+        return response;
     }
 
     public PersonDto getPersonById(Long id) {
@@ -212,12 +217,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     public boolean checkIfUsernameExists(String username) {
-        Person person = personRepository.findByUsername(username);
+        Person person = personRepository.findByUsernameIgnoreCase(username);
         return person != null;
     }
 
     private boolean checkIfEmailExists(String email) {
-        Person person = personRepository.findByEmail(email);
+        Person person = personRepository.findByEmailIgnoreCase(email);
         return person != null;
     }
 
