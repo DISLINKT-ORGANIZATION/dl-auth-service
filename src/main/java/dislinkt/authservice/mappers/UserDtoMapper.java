@@ -15,6 +15,11 @@ public class UserDtoMapper {
 				user.getBirthDate(), user.getGender().getValue(), user.getAuthorities().get(0).getAuthority());
 	}
 
+	public PersonDto toDtoWithToken(User user, String token) {
+		return new PersonDto(user.getId(), user.getUsername(), user.getEmail(), user.getFirstName(), user.getLastName(),
+				user.getBirthDate(), user.getGender().getValue(), user.getAuthorities().get(0).getAuthority(), token);
+	}
+
 	public User toEntity(UserRegistrationRequest request) {
 		return new User(request.getEmail(), request.getUsername(), request.getFirstName(), request.getLastName(),
 				request.getBirthDate(), Gender.valueOfInt(request.getGender()));
