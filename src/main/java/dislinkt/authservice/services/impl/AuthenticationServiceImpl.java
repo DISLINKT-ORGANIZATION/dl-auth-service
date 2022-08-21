@@ -7,6 +7,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,7 @@ import dislinkt.authservice.services.AuthenticationService;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class AuthenticationServiceImpl implements AuthenticationService {
@@ -157,7 +159,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         String token = "";
         if (!person.getUsername().equalsIgnoreCase(updateDto.getUsername())) {
             checkUsername(updateDto.getUsername());
-            token = tokenUtils.generateToken(updateDto.getUsername());
+            token = tokenUtils.generateToken(
+                    updateDto.getUsername(), person.getId() + "",
+                    person.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()));
         }
         if (!person.getEmail().equalsIgnoreCase(updateDto.getEmail())) {
             checkEmail(updateDto.getEmail());
@@ -234,7 +238,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         // create token
         Person user = (Person) authentication.getPrincipal();
-        String jwt = tokenUtils.generateToken(user.getUsername());
+        String jwt = tokenUtils.generateToken(
+                user.getUsername(), user.getId() + "",
+                user.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()));
         PersonDto person = getPersonByUsername(user.getUsername());
 
         return new UserJwtToken(jwt, person.getId(), person.getRole());
