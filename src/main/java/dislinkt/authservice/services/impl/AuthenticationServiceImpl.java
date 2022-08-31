@@ -1,8 +1,11 @@
 package dislinkt.authservice.services.impl;
 
 import dislinkt.authservice.dtos.*;
+import dislinkt.authservice.repositories.specification.UserSpecification;
 import dislinkt.authservice.security.TokenUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -32,6 +35,7 @@ import dislinkt.authservice.services.AuthenticationService;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -223,6 +227,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public boolean checkIfUsernameExists(String username) {
         Person person = personRepository.findByUsernameIgnoreCase(username);
         return person != null;
+    }
+
+    public List<PersonDto> filter(String query) {
+        UserSpecification spec = new UserSpecification(query);
+        return userRepository.findAll(spec).stream().map(u -> userMapper.toDto(u)).collect(Collectors.toList());
     }
 
     private boolean checkIfEmailExists(String email) {
