@@ -1,6 +1,11 @@
 package dislinkt.authservice.controllers;
 
 import dislinkt.authservice.dtos.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -8,6 +13,8 @@ import dislinkt.authservice.services.AuthenticationService;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/authentication")
@@ -59,5 +66,11 @@ public class AuthenticationController {
 	public ResponseEntity<Boolean> checkIfUsernameExists(@PathVariable String username) {
 		Boolean userExists = authenticationService.checkIfUsernameExists(username);
 		return ResponseEntity.ok(userExists);
+	}
+
+	@GetMapping("/users/search/{query}")
+	public ResponseEntity<List<PersonDto>> filterUsers(@PathVariable String query) {
+		List<PersonDto> page = authenticationService.filter(query);
+		return new ResponseEntity<>(page, HttpStatus.OK);
 	}
 }
