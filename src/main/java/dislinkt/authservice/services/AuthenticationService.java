@@ -24,4 +24,6 @@ public interface AuthenticationService {
 	boolean checkIfUsernameExists(String username);
 
     List<PersonDto> filter(String query);
+
+    List<PersonDto> findUsersByIds(UserIds userIds);
 }
