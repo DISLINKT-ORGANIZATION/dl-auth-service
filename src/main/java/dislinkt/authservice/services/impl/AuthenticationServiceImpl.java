@@ -234,6 +234,19 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return userRepository.findAll(spec).stream().map(u -> userMapper.toDto(u)).collect(Collectors.toList());
     }
 
+    @Override
+    public List<PersonDto> findUsersByIds(UserIds userIds) {
+        List<PersonDto> users = new ArrayList<>();
+        for (Long id: userIds.getIds()) {
+            Optional<User> user = userRepository.findById(id);
+            if(user.isPresent()) {
+                PersonDto dto = userMapper.toDto(user.get());
+                users.add(dto);
+            }
+        }
+        return users;
+    }
+
     private boolean checkIfEmailExists(String email) {
         Person person = personRepository.findByEmailIgnoreCase(email);
         return person != null;

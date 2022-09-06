@@ -1,10 +1,6 @@
 package dislinkt.authservice.controllers;
 
 import dislinkt.authservice.dtos.*;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -69,8 +65,17 @@ public class AuthenticationController {
 	}
 
 	@GetMapping("/users/search/{query}")
+	@PreAuthorize("hasRole('ROLE_USER')")
 	public ResponseEntity<List<PersonDto>> filterUsers(@PathVariable String query) {
-		List<PersonDto> page = authenticationService.filter(query);
-		return new ResponseEntity<>(page, HttpStatus.OK);
+		List<PersonDto> users = authenticationService.filter(query);
+		return new ResponseEntity<>(users, HttpStatus.OK);
 	}
+
+	@PostMapping("/users/ids")
+	@PreAuthorize("hasRole('ROLE_USER')")
+	public ResponseEntity<List<PersonDto>> getUsersByIds(@RequestBody UserIds userIds) {
+		List<PersonDto> users = authenticationService.findUsersByIds(userIds);
+		return new ResponseEntity<>(users, HttpStatus.OK);
+	}
+
 }
