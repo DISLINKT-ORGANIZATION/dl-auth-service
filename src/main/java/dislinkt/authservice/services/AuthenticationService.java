@@ -13,7 +13,7 @@ public interface AuthenticationService {
 
 	PersonDto registerUser(UserRegistrationRequest request);
 
-	PersonDto createAgent(AgentCreateRequest request);
+	AgentDto createAgent(AgentCreateRequest request);
 	
 	PersonDto updatePerson(PersonDto updateDto);
 
@@ -22,6 +22,8 @@ public interface AuthenticationService {
 	PersonDto getPersonByUsername(String username);
 	
 	boolean checkIfUsernameExists(String username);
+	
+	boolean checkIfEmailExists(String email);
 
     List<PersonDto> filter(String query);
 

@@ -33,7 +33,7 @@ public class AuthenticationController {
 
 	@PostMapping("/create-agent")
 	public ResponseEntity<?> createAgent(@RequestBody AgentCreateRequest agentCreateRequest) {
-		PersonDto agentDto = authenticationService.createAgent(agentCreateRequest);
+		AgentDto agentDto = authenticationService.createAgent(agentCreateRequest);
 		return ResponseEntity.ok(agentDto);
 	}
 	
@@ -61,6 +61,12 @@ public class AuthenticationController {
 	@GetMapping("/users/check-username/{username}")
 	public ResponseEntity<Boolean> checkIfUsernameExists(@PathVariable String username) {
 		Boolean userExists = authenticationService.checkIfUsernameExists(username);
+		return ResponseEntity.ok(userExists);
+	}
+	
+	@GetMapping("/users/check-email/{email}")
+	public ResponseEntity<Boolean> checkIfEmailExists(@PathVariable String email) {
+		Boolean userExists = authenticationService.checkIfEmailExists(email);
 		return ResponseEntity.ok(userExists);
 	}
 
