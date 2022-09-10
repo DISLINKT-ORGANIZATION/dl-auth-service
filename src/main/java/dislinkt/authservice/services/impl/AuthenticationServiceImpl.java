@@ -107,7 +107,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return userMapper.toDto(newUser);
     }
 
-    public PersonDto createAgent(AgentCreateRequest request) {
+    public AgentDto createAgent(AgentCreateRequest request) {
 
         checkUsername(request.getUsername());
         checkEmail(request.getEmail());
@@ -120,7 +120,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             }
         });
 
-        return agentMapper.toDto(agentRepository.save(agent));
+        return agentMapper.toAgentDto(agentRepository.save(agent));
     }
 
     public PersonDto updatePerson(PersonDto updateDto) {
@@ -247,7 +247,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return users;
     }
 
-    private boolean checkIfEmailExists(String email) {
+    public boolean checkIfEmailExists(String email) {
         Person person = personRepository.findByEmailIgnoreCase(email);
         return person != null;
     }
