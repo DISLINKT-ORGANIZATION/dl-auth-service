@@ -13,4 +13,9 @@ public class KafkaTopicConfig {
 	public NewTopic dislinktTopic() {
 		return TopicBuilder.name("dislinkt-notifications").build();
 	}
+	
+	@Bean
+	public NewTopic eventsTopic() {
+		return TopicBuilder.name("dislinkt-events").build();
+	}
 }
