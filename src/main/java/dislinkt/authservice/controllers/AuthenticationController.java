@@ -44,7 +44,6 @@ public class AuthenticationController {
 		return ResponseEntity.ok(userDto);
 	}
 
-	@PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_AGENT', 'ROLE_ADMINISTRATOR')")
 	@GetMapping("/users/{id}")
 	public ResponseEntity<?> getUserById(@PathVariable Long id) {
 		PersonDto userDto = authenticationService.getPersonById(id);
@@ -71,14 +70,12 @@ public class AuthenticationController {
 	}
 
 	@GetMapping("/users/search/{query}")
-	@PreAuthorize("hasRole('ROLE_USER')")
 	public ResponseEntity<List<PersonDto>> filterUsers(@PathVariable String query) {
 		List<PersonDto> users = authenticationService.filter(query);
 		return new ResponseEntity<>(users, HttpStatus.OK);
 	}
 
 	@PostMapping("/users/ids")
-	@PreAuthorize("hasRole('ROLE_USER')")
 	public ResponseEntity<List<PersonDto>> getUsersByIds(@RequestBody UserIds userIds) {
 		List<PersonDto> users = authenticationService.findUsersByIds(userIds);
 		return new ResponseEntity<>(users, HttpStatus.OK);
